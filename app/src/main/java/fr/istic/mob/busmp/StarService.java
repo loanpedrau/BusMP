@@ -60,18 +60,18 @@ public class StarService extends Service {
             //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
-            /**NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setContentTitle("My notification")
                     .setContentText("Hello World!")
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     // Set the intent that will fire when the user taps the notification
                     //.setContentIntent(pendingIntent)
-                    .setAutoCancel(true);**/
+                    .setAutoCancel(true);
 
-            //NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
-            //Notification notification = builder.build();
-            // notificationId is a unique int for each notification that you must define
-            //notificationManager.notify(notification., builder.build());
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
+            Notification notification = builder.build();
+            //notificationId is a unique int for each notification that you must define
+            notificationManager.notify(0, builder.build());
             System.out.println(msg.toString());
             stopSelf(msg.arg1);
         }

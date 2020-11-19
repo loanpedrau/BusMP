@@ -1,7 +1,7 @@
 package fr.istic.mob.busmp;
 
-import android.app.Notification;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -29,7 +29,7 @@ public class StarService extends Service {
         HandlerThread thread = new HandlerThread("ServiceStartArguments",Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
         mServiceLooper = thread.getLooper();
-        mServiceHandler = new ServiceHandler(mServiceLooper);
+        mServiceHandler = new ServiceHandler(mServiceLooper,this);
     }
 
     @Override
@@ -48,31 +48,30 @@ public class StarService extends Service {
 
     private final class ServiceHandler extends Handler {
 
-        private static final String CHANNEL_ID = "0";
+        private static final String CHANNEL_ID = "1";
+        private Context context;
 
-        public ServiceHandler(Looper looper){
+        public ServiceHandler(Looper looper, Context context){
             super(looper);
+            this.context = context;
         }
 
-        public void handlerMessage(Message msg){
+        @Override
+        public void handleMessage(Message msg){
             // Create an explicit intent for an Activity in your app
             //Intent intent = new Intent(this, AlertDetails.class);
             //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+            System.out.println("passage");
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this.context, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_background)
+                    .setContentTitle("title")
+                    .setContentText("content")
+                    .setPriority(NotificationCompat.PRIORITY_HIGH);
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this.context);
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
-                    .setContentTitle("My notification")
-                    .setContentText("Hello World!")
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    // Set the intent that will fire when the user taps the notification
-                    //.setContentIntent(pendingIntent)
-                    .setAutoCancel(true);
-
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
-            Notification notification = builder.build();
-            //notificationId is a unique int for each notification that you must define
-            notificationManager.notify(0, builder.build());
-            System.out.println(msg.toString());
+            // notificationId is a unique int for each notification that you must define
+            notificationManager.notify(1, builder.build());
             stopSelf(msg.arg1);
         }
     }

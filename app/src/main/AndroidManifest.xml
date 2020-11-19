@@ -16,7 +16,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".StarService"/>
+        <service android:name=".StarService"
+            android:enabled="true"/>
     </application>
 
 </manifest>

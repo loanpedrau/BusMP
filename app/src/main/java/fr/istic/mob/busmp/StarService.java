@@ -15,6 +15,8 @@ import android.os.Process;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -27,6 +29,10 @@ public class StarService extends Service {
 
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
+    private Thread checkFileThread;
+    private boolean checkFile = true;
+    private String actualUrl = "";
+    private final static String API_URL = "https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=";
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -44,22 +50,62 @@ public class StarService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Message msg = mServiceHandler.obtainMessage();
-        msg.arg1 = startId;
-        mServiceHandler.sendMessage(msg);
+        checkFileThread = new Thread(new Runnable(){
+            public void run() {
+                // TODO Auto-generated method stub
+                while(checkFile)
+                {
+                    try {
+                        Thread.sleep(60000); //warning : api limit 2000 call by day
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        String url = requestNewFile();
+                        if(!url.equals(getActualUrl())) {
+                            Message msg = mServiceHandler.obtainMessage();
+                            msg.arg1 = 0;
+                            mServiceHandler.sendMessage(msg);
+                            setActualUrl(url);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        });
+        checkFileThread.start();
         return START_NOT_STICKY;
     }
 
     @Override
     public void onDestroy(){
+        stopCheckFile();
+        try {
+            checkFileThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         super.onDestroy();
     }
 
-    private void requestNewFile() throws IOException {
+    private void stopCheckFile(){
+        this.checkFile = false;
+    }
+
+    public String getActualUrl(){
+        return this.actualUrl;
+    }
+
+    public void setActualUrl(String actualUrl){
+        this.actualUrl = actualUrl;
+    }
+
+    private String requestNewFile() throws IOException {
         URL url;
         HttpURLConnection urlConnection = null;
-        StringBuilder result = new StringBuilder();
-
+        StringBuilder stringBuilder = new StringBuilder();
         try {
             url = new URL("https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=");
 
@@ -71,8 +117,11 @@ public class StarService extends Service {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                result.append(line);
+                stringBuilder.append(line);
             }
+            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+            System.out.println(jsonObject.toString());
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -80,7 +129,7 @@ public class StarService extends Service {
                 urlConnection.disconnect();
             }
         }
-        System.out.println(result.toString());
+        return stringBuilder.toString();
     }
 
     private final class ServiceHandler extends Handler {
@@ -95,11 +144,6 @@ public class StarService extends Service {
 
         @Override
         public void handleMessage(Message msg){
-            try {
-                requestNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
             // Create an explicit intent for an Activity in your app
             //Intent intent = new Intent(this, AlertDetails.class);
             //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

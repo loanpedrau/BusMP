@@ -12,6 +12,9 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.view.View;
+import android.widget.ProgressBar;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -19,11 +22,22 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.channels.Channels;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class StarService extends Service {
 
@@ -33,6 +47,8 @@ public class StarService extends Service {
     private boolean checkFile = true;
     private String actualUrl = "";
     private final static String API_URL = "https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=";
+    private List<File> files = new ArrayList<>();
+    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -50,25 +66,47 @@ public class StarService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Thread initAppWithFile =  new Thread(new Runnable(){
+            public void run() {
+                try {
+                    setActualUrl(requestFile("https://data.explore.star.fr/api/records/1.0/search" +
+                            "/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=-publication").toString());
+                    // l’appli télécharge automatiquement le premier fichier CSV/JSON à l’installation (le plus ancien donc : sort = -publication)
+                    //pour pouvoir tester le service
+                    System.out.println("FIRST FILE : "+getActualUrl());
+                    downloadZipFile(getActualUrl());
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        initAppWithFile.start();
+        try {
+            initAppWithFile.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         checkFileThread = new Thread(new Runnable(){
             public void run() {
-                // TODO Auto-generated method stub
                 while(checkFile)
                 {
                     try {
-                        Thread.sleep(60000); //warning : api limit 2000 call by day
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        String url = requestNewFile();
+                        String url = requestFile("https://data.explore.star.fr/api/records/1.0/search" +
+                                "/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=publication").toString();
+                        //recupere dernier fichier publié (sort = publication)
                         if(!url.equals(getActualUrl())) {
+                            System.out.println("NEW FILE : "+url);
                             Message msg = mServiceHandler.obtainMessage();
-                            msg.arg1 = 0;
                             mServiceHandler.sendMessage(msg);
                             setActualUrl(url);
                         }
                     } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        Thread.sleep(60000); //warning : api limit 2000 call by day
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
@@ -102,12 +140,12 @@ public class StarService extends Service {
         this.actualUrl = actualUrl;
     }
 
-    private String requestNewFile() throws IOException {
+    private StringBuilder requestFile(String urlSite) throws IOException {
         URL url;
         HttpURLConnection urlConnection = null;
         StringBuilder stringBuilder = new StringBuilder();
         try {
-            url = new URL("https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=");
+            url = new URL(urlSite);
 
             urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -120,7 +158,10 @@ public class StarService extends Service {
                 stringBuilder.append(line);
             }
             JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-            System.out.println(jsonObject.toString());
+            JSONObject firstRecord = (JSONObject) jsonObject.getJSONArray("records").get(0);
+            JSONObject fields = (JSONObject) firstRecord.get("fields");
+            stringBuilder.setLength(0);
+            stringBuilder.append(fields.get("url").toString());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -129,7 +170,48 @@ public class StarService extends Service {
                 urlConnection.disconnect();
             }
         }
-        return stringBuilder.toString();
+        return stringBuilder;
+    }
+
+    private void downloadZipFile(String url) throws IOException {
+        files.clear();
+        URL targetUrl = new URL(url);
+        HttpURLConnection connection = (HttpURLConnection) targetUrl.openConnection();
+        InputStream in = connection.getInputStream();
+        ZipInputStream zipIn = new ZipInputStream(in);
+        ZipEntry entry = zipIn.getNextEntry();
+        while(entry != null) {
+            if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
+                File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
+                FileOutputStream  os = new FileOutputStream(file);
+                for (int c = zipIn.read(); c != -1; c = zipIn.read()) {
+                    os.write(c);
+                }
+                os.close();
+                files.add(file);
+                System.out.println("b");
+            }
+            zipIn.closeEntry();
+            entry = zipIn.getNextEntry();
+        }
+        System.out.println("a");
+        System.out.println(files.toString());
+    }
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "channel_name";
+            String description = "description";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(ServiceHandler.CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     private final class ServiceHandler extends Handler {
@@ -159,22 +241,6 @@ public class StarService extends Service {
 
             // notificationId is a unique int for each notification that you must define
             notificationManager.notify(0, builder.build());
-        }
-    }
-
-    private void createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "channel_name";
-            String description = "description";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel(ServiceHandler.CHANNEL_ID, name, importance);
-            channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel);
         }
     }
 

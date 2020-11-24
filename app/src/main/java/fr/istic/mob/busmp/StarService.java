@@ -27,12 +27,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.file.Files;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,6 +51,8 @@ public class StarService extends Service {
     private final static String API_URL = "https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=";
     private List<File> files = new ArrayList<>();
     private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
+    private Collator LocalBroadcastManager;
+    private int nbFileUpload = 0;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -82,11 +86,11 @@ public class StarService extends Service {
             }
         });
         initAppWithFile.start();
-        try {
+        /**try {
             initAppWithFile.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }**/
         checkFileThread = new Thread(new Runnable(){
             public void run() {
                 while(checkFile)
@@ -162,40 +166,58 @@ public class StarService extends Service {
             JSONObject fields = (JSONObject) firstRecord.get("fields");
             stringBuilder.setLength(0);
             stringBuilder.append(fields.get("url").toString());
+            reader.close();
 
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();
+
             }
         }
         return stringBuilder;
     }
 
-    private void downloadZipFile(String url) throws IOException {
+    private synchronized void downloadZipFile(String url) throws IOException {
         files.clear();
+        Intent broadcastIntent = new Intent();
+        broadcastIntent.setAction("update_progress_bar");
+        broadcastIntent.putExtra("value",nbFileUpload);
         URL targetUrl = new URL(url);
         HttpURLConnection connection = (HttpURLConnection) targetUrl.openConnection();
         InputStream in = connection.getInputStream();
         ZipInputStream zipIn = new ZipInputStream(in);
         ZipEntry entry = zipIn.getNextEntry();
+        broadcastIntent.putExtra("size",entry.getSize());
+        sendBroadcast(broadcastIntent);
+
         while(entry != null) {
             if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
                 File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
                 FileOutputStream  os = new FileOutputStream(file);
-                for (int c = zipIn.read(); c != -1; c = zipIn.read()) {
-                    os.write(c);
-                }
+                streamCopy(zipIn, os);
                 os.close();
                 files.add(file);
-                System.out.println("b");
+                System.out.println("UNZIP : "+entry.getName());
+                nbFileUpload++;
+                broadcastIntent.putExtra("value",nbFileUpload);
+                sendBroadcast(broadcastIntent);
             }
             zipIn.closeEntry();
             entry = zipIn.getNextEntry();
         }
-        System.out.println("a");
+        System.out.println("FIN UNZIP");
         System.out.println(files.toString());
+        nbFileUpload =0;
+    }
+
+    public static void streamCopy(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[32 * 1024];
+        int readCount;
+        while ((readCount = in.read(buffer)) != -1) {
+            out.write(buffer, 0, readCount);
+        }
     }
 
     private void createNotificationChannel() {
@@ -231,13 +253,13 @@ public class StarService extends Service {
             //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(getBaseContext(), CHANNEL_ID)
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_background)
                     .setContentTitle("title")
                     .setContentText("content")
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getBaseContext());
+            NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
 
             // notificationId is a unique int for each notification that you must define
             notificationManager.notify(0, builder.build());

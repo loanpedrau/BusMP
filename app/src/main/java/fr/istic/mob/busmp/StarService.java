@@ -80,7 +80,7 @@ public class StarService extends Service {
                     System.out.println("FIRST FILE : "+getActualUrl());
                     downloadZipFile(getActualUrl());
 
-                } catch (IOException e) {
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
@@ -179,7 +179,7 @@ public class StarService extends Service {
         return stringBuilder;
     }
 
-    private synchronized void downloadZipFile(String url) throws IOException {
+    private synchronized void downloadZipFile(String url) throws IOException, InterruptedException {
         files.clear();
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("update_progress_bar");
@@ -193,6 +193,7 @@ public class StarService extends Service {
         sendBroadcast(broadcastIntent);
 
         while(entry != null) {
+            //Thread.sleep(500);
             if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
                 File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
                 FileOutputStream  os = new FileOutputStream(file);

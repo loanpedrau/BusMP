@@ -2,6 +2,7 @@ package fr.istic.mob.busmp;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -102,6 +103,7 @@ public class StarService extends Service {
                         if(!url.equals(getActualUrl())) {
                             System.out.println("NEW FILE : "+url);
                             Message msg = mServiceHandler.obtainMessage();
+                            msg.obj = url;
                             mServiceHandler.sendMessage(msg);
                             setActualUrl(url);
                         }
@@ -249,16 +251,17 @@ public class StarService extends Service {
 
         @Override
         public void handleMessage(Message msg){
-            // Create an explicit intent for an Activity in your app
-            //Intent intent = new Intent(this, AlertDetails.class);
-            //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+            // Create an explicit intent for a Service in your app
+            Intent intent = new Intent(getApplicationContext(), DownloadService.class);
+            intent.putExtra("url", (String) msg.obj);
+            PendingIntent pendingIntent = PendingIntent.getService(getApplicationContext(), 0, intent, 0);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_background)
                     .setContentTitle("title")
                     .setContentText("content")
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setContentIntent(pendingIntent);
 
             NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());
 

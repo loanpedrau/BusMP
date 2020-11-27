@@ -13,7 +13,7 @@ public class Stop {
     private String stop_desc;
     private float stop_lat;
     private float stop_lon;
-    private int zone_id;
+    private String zone_id;
     private String stop_url;
     private String location_type;
     private String parent_station;
@@ -22,7 +22,7 @@ public class Stop {
 
 
     public Stop(int stop_id, int stop_code, String stop_name, String stop_desc, float stop_lat,
-                float stop_lon, int zone_id, String stop_url, String location_type,
+                float stop_lon, String zone_id, String stop_url, String location_type,
                 String parent_station, String stop_timezone, int wheelchair_boarding) {
         this.stop_id = stop_id;
         this.stop_code = stop_code;
@@ -36,6 +36,21 @@ public class Stop {
         this.parent_station = parent_station;
         this.stop_timezone = stop_timezone;
         this.wheelchair_boarding = wheelchair_boarding;
+    }
+
+    public Stop(String[] attributes){
+        this.stop_id = Integer.valueOf(attributes[0].replace("\"",""));
+        this.stop_code = Integer.valueOf(attributes[1].replace("\"",""));
+        this.stop_name = attributes[2].replace("\"","");
+        this.stop_desc = attributes[3].replace("\"","");
+        this.stop_lat = Float.valueOf(attributes[4].replace("\"",""));
+        this.stop_lon = Float.valueOf(attributes[5].replace("\"",""));
+        this.zone_id = attributes[6].replace("\"","");
+        this.stop_url = attributes[7].replace("\"","");
+        this.location_type = attributes[8].replace("\"","");
+        this.parent_station = attributes[9].replace("\"","");
+        this.stop_timezone = attributes[10].replace("\"","");
+        this.wheelchair_boarding = Integer.valueOf(attributes[11].replace("\"",""));
     }
 
     public int getStop_id() {
@@ -86,11 +101,11 @@ public class Stop {
         this.stop_lon = stop_lon;
     }
 
-    public int getZone_id() {
+    public String getZone_id() {
         return zone_id;
     }
 
-    public void setZone_id(int zone_id) {
+    public void setZone_id(String zone_id) {
         this.zone_id = zone_id;
     }
 

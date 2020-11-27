@@ -10,7 +10,7 @@ import java.util.List;
 public interface TripDao {
 
     @Query("SELECT * FROM Trip WHERE trip_id = :trip_id ")
-    LiveData<List<Trip>> getTrip(int trip_id);
+    List<Trip> getTrip(int trip_id);
 
     @Insert
     void insertTrip(Trip trip);

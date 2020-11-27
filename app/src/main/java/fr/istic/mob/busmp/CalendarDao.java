@@ -12,10 +12,10 @@ import java.util.List;
 public interface CalendarDao {
 
     @Query("SELECT * FROM Calendar")
-    LiveData<List<Calendar>> getAllCalendar();
+    List<Calendar> getAllCalendar();
 
     @Query("SELECT * FROM Calendar WHERE service_id = :serviceId")
-    LiveData<List<Calendar>> getCalendar(int serviceId);
+    List<Calendar> getCalendar(int serviceId);
 
     @Insert
     void insertCalendar(Calendar calendar);

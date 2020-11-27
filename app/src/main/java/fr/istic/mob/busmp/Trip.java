@@ -1,24 +1,26 @@
 package fr.istic.mob.busmp;
 
+import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity
 public class Trip {
 
+    @NonNull
     @PrimaryKey
-    private int trip_id;
-    private int route_id;
-    private int service_id;
+    private String trip_id;
+    private String route_id;
+    private String service_id;
     private String trip_headsign;
     private String trip_short_name;
-    private int direction_id;
+    private String direction_id;
     private String block_id;
     private String shape_id;
-    private int wheelchair_accessible;
+    private String wheelchair_accessible;
     private String bikes_allowed;
 
-    public Trip(int route_id, int service_id, int trip_id, String trip_headsign, String trip_short_name, int direction_id, String block_id, String shape_id, int wheelchair_accessible, String bikes_allowed) {
+    public Trip(String route_id, String service_id, String trip_id, String trip_headsign, String trip_short_name, String direction_id, String block_id, String shape_id, String wheelchair_accessible, String bikes_allowed) {
         this.route_id = route_id;
         this.service_id = service_id;
         this.trip_id = trip_id;
@@ -31,27 +33,40 @@ public class Trip {
         this.bikes_allowed = bikes_allowed;
     }
 
-    public int getRoute_id() {
+    public Trip(String[] attributes){
+        this.route_id = attributes[0].replace("\"","");
+        this.service_id = attributes[1].replace("\"","");
+        this.trip_id = attributes[2].replace("\"","");
+        this.trip_headsign = attributes[3].replace("\"","");
+        this.trip_short_name = attributes[4].replace("\"","");
+        this.direction_id = attributes[5].replace("\"","");
+        this.block_id = attributes[6].replace("\"","");
+        this.shape_id = attributes[7].replace("\"","");
+        this.wheelchair_accessible = attributes[8].replace("\"","");
+        this.bikes_allowed = attributes[9].replace("\"","");
+    }
+
+    public String getRoute_id() {
         return route_id;
     }
 
-    public void setRoute_id(int route_id) {
+    public void setRoute_id(String route_id) {
         this.route_id = route_id;
     }
 
-    public int getService_id() {
+    public String getService_id() {
         return service_id;
     }
 
-    public void setService_id(int service_id) {
+    public void setService_id(String service_id) {
         this.service_id = service_id;
     }
 
-    public int getTrip_id() {
+    public String getTrip_id() {
         return trip_id;
     }
 
-    public void setTrip_id(int trip_id) {
+    public void setTrip_id(String trip_id) {
         this.trip_id = trip_id;
     }
 
@@ -71,11 +86,11 @@ public class Trip {
         this.trip_short_name = trip_short_name;
     }
 
-    public int getDirection_id() {
+    public String getDirection_id() {
         return direction_id;
     }
 
-    public void setDirection_id(int direction_id) {
+    public void setDirection_id(String direction_id) {
         this.direction_id = direction_id;
     }
 
@@ -95,11 +110,11 @@ public class Trip {
         this.shape_id = shape_id;
     }
 
-    public int getWheelchair_accessible() {
+    public String getWheelchair_accessible() {
         return wheelchair_accessible;
     }
 
-    public void setWheelchair_accessible(int wheelchair_accessible) {
+    public void setWheelchair_accessible(String wheelchair_accessible) {
         this.wheelchair_accessible = wheelchair_accessible;
     }
 

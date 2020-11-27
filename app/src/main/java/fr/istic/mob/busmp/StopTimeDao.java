@@ -12,10 +12,10 @@ import java.util.List;
 public interface StopTimeDao {
 
     @Query("SELECT * FROM Stop_time WHERE trip_id = :trip_id AND stop_id = :stop_id ")
-    LiveData<List<Stop_time>> getStopTime(int trip_id, int stop_id );
+    List<Stop_time> getStopTime(int trip_id, int stop_id );
 
     @Insert
-    void insertStopTime(Stop_time StopTime);
+    void insertStopTime(List<Stop_time> StopTime);
 
     @Update
     void updateStopTime(Stop_time StopTime);

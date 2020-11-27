@@ -34,6 +34,20 @@ public class Route {
         this.route_sort_order = route_sort_order;
     }
 
+    public Route(String[] attributes){
+        this.route_id = Integer.valueOf(attributes[0].replace("\"",""));
+        this.agency_id = Integer.valueOf(attributes[1].replace("\"",""));
+        this.route_short_name = attributes[2].replace("\"","");
+        this.route_long_name = attributes[3].replace("\"","");
+        this.route_desc = attributes[4].replace("\"","");
+        this.route_type = Integer.valueOf(attributes[5].replace("\"",""));
+        this.route_url = attributes[6].replace("\"","");
+        this.route_color = attributes[7].replace("\"","");
+        this.route_text_color = attributes[8].replace("\"","");
+        this.route_sort_order = Integer.valueOf(attributes[9].replace("\"",""));
+    }
+
+
     public int getRoute_id() {
         return route_id;
     }

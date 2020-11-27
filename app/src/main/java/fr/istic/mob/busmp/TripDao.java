@@ -19,5 +19,5 @@ public interface TripDao {
     void updateTrip(Trip trip);
 
     @Query("DELETE FROM Trip WHERE trip_id = :trip_id ")
-    int deleteTrip(int trip_id, int stop_id  );
+    int deleteTrip(int trip_id);
 }

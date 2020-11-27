@@ -3,7 +3,7 @@ package fr.istic.mob.busmp;
 import androidx.room.Entity;
 
 @Entity
-public class Bus_route {
+public class Route {
 
     private int route_id;
     private int agency_id;
@@ -17,9 +17,9 @@ public class Bus_route {
     private int route_sort_order;
 
 
-    public Bus_route(int route_id, int agency_id, String route_short_name, String route_long_name,
-                     String route_desc, int route_type, String route_url, String route_color,
-                     String route_text_color, int route_sort_order) {
+    public Route(int route_id, int agency_id, String route_short_name, String route_long_name,
+                 String route_desc, int route_type, String route_url, String route_color,
+                 String route_text_color, int route_sort_order) {
         this.route_id = route_id;
         this.agency_id = agency_id;
         this.route_short_name = route_short_name;

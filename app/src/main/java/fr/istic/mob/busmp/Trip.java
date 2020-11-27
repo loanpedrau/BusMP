@@ -6,10 +6,10 @@ import androidx.room.PrimaryKey;
 @Entity
 public class Trip {
 
-    private int route_id;
-    private int service_id;
     @PrimaryKey
     private int trip_id;
+    private int route_id;
+    private int service_id;
     private String trip_headsign;
     private String trip_short_name;
     private int direction_id;

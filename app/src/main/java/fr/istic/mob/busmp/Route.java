@@ -1,10 +1,12 @@
 package fr.istic.mob.busmp;
 
 import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
 @Entity
 public class Route {
 
+    @PrimaryKey
     private int route_id;
     private int agency_id;
     private String route_short_name;

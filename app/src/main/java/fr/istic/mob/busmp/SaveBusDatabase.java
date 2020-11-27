@@ -18,8 +18,8 @@ public abstract class SaveBusDatabase extends RoomDatabase {
     public abstract CalendarDao calendarDao();
     public abstract RouteDao routeDao();
     public abstract StopDao stopDao();
-    //public abstract StopTimeDao stopTimeDao();
-    //public abstract TripDao tripDao();
+    public abstract StopTimeDao stopTimeDao();
+    public abstract TripDao tripDao();
 
     // --- INSTANCE ---
     public static SaveBusDatabase getInstance(Context context) {

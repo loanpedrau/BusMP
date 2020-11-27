@@ -1,10 +1,13 @@
 package fr.istic.mob.busmp;
 
 import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
 @Entity
 public class Stop_time {
 
+    @PrimaryKey
+    private int id;
     private int trip_id;
     private String arrival_time;
     private String departure_time;
@@ -27,10 +30,18 @@ public class Stop_time {
         this.drop_off_type = drop_off_type;
         this.shape_dist_traveled = shape_dist_traveled;
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public int getTrip_id() {
         return trip_id;
     }
-
 
     public void setTrip_id(int trip_id) {
         this.trip_id = trip_id;

@@ -62,4 +62,36 @@ public class MainActivity extends AppCompatActivity {
             System.out.println("passage ici");
         }
     }
+
+    /*
+private void loadBusLineSpinner()
+{
+    // database
+
+    // Spinner Drop down elements
+    List<String> busLines = getAllBusLines();
+
+    // Creating adapter for spinner
+    ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+            android.R.layout.simple_spinner_item, busLines);
+
+    // Drop down layout style - list view with radio button
+    dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+    // attaching data adapter to spinner
+    spinner1.setAdapter(dataAdapter);
+}
+
+public List<String> getAllBusLines(){
+    List<String> busLines = new ArrayList<String>();
+
+    // Select All Query
+
+    // looping through all rows and adding to list
+
+    // closing connection
+
+    // returning contatcs
+    return busLines;
+}*/
 }

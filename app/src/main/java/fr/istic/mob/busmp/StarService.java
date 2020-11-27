@@ -36,7 +36,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -47,7 +49,7 @@ public class StarService extends Service {
     private Thread checkFileThread;
     private boolean checkFile = true;
     private String actualUrl = "";
-    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
+    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stop_times.txt","stops.txt","calendar.txt");
     private int nbFileUpload = 0;
     private SaveBusDatabase database;
     //public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
@@ -247,6 +249,15 @@ public class StarService extends Service {
         }
         nbFileUpload =0;
         setActualUrl(url);
+        Intent broadcastIntentSpinner = new Intent();
+        broadcastIntentSpinner.setAction("update_spinners");
+        List<Route> routes = this.database.routeDao().getAllRoutes();
+        Set hashset = new HashSet<>();
+        for(Route route : routes){
+            hashset.add(route.getRoute_short_name());
+        }
+        broadcastIntentSpinner.putExtra("line", hashset.toArray());
+        sendBroadcast(broadcastIntentSpinner);
     }
 
     private void insertDataInDatabase(File file) {

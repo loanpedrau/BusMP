@@ -12,6 +12,7 @@ import android.widget.ProgressBar;
 public class MainActivity extends AppCompatActivity {
 
     private MyBroadRequestReceiver receiver;
+    private SpinnerReceiver spinnerReceiver;
     private ProgressBar bar;
 
     @Override
@@ -24,6 +25,9 @@ public class MainActivity extends AppCompatActivity {
             IntentFilter filter = new IntentFilter("update_progress_bar");
             receiver = new MyBroadRequestReceiver();
             registerReceiver( receiver, filter);
+            IntentFilter filterSpinner = new IntentFilter("update_spinners");
+            spinnerReceiver = new SpinnerReceiver();
+            registerReceiver(spinnerReceiver, filterSpinner);
             Intent intent = new Intent(this, StarService.class);
             startService(intent);
         }
@@ -48,6 +52,14 @@ public class MainActivity extends AppCompatActivity {
             if(value == max_progress){
                 bar.setVisibility(View.GONE);
             }
+        }
+    }
+    private class SpinnerReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Object[] lines = intent.getStringArrayExtra("lines");
+            System.out.println("passage ici");
         }
     }
 }

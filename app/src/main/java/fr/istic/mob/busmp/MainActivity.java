@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             System.out.println("update");
+            bar.setVisibility(View.VISIBLE);
             int max_progress = intent.getIntExtra("max_progress",5);
             int value = intent.getIntExtra("value",1);
             System.out.println("max :"+max_progress+" value :"+value);

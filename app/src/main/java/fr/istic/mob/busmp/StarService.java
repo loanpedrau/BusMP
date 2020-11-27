@@ -1,5 +1,6 @@
 package fr.istic.mob.busmp;
 
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -49,10 +50,7 @@ public class StarService extends Service {
     private Thread checkFileThread;
     private boolean checkFile = true;
     private String actualUrl = "";
-    private final static String API_URL = "https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=";
-    private List<File> files = new ArrayList<>();
     private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
-    private Collator LocalBroadcastManager;
     private int nbFileUpload = 0;
 
     @Override
@@ -182,7 +180,6 @@ public class StarService extends Service {
     }
 
     private synchronized void downloadZipFile(String url) throws IOException, InterruptedException {
-        files.clear();
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("update_progress_bar");
         broadcastIntent.putExtra("value",nbFileUpload);
@@ -195,13 +192,11 @@ public class StarService extends Service {
         sendBroadcast(broadcastIntent);
 
         while(entry != null) {
-            //Thread.sleep(500);
             if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
                 File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
                 FileOutputStream  os = new FileOutputStream(file);
                 streamCopy(zipIn, os);
                 os.close();
-                files.add(file);
                 System.out.println("UNZIP : "+entry.getName());
                 nbFileUpload++;
                 broadcastIntent.putExtra("value",nbFileUpload);
@@ -211,7 +206,6 @@ public class StarService extends Service {
             entry = zipIn.getNextEntry();
         }
         System.out.println("FIN UNZIP");
-        System.out.println(files.toString());
         nbFileUpload =0;
     }
 
@@ -254,13 +248,14 @@ public class StarService extends Service {
             // Create an explicit intent for a Service in your app
             Intent intent = new Intent(getApplicationContext(), DownloadService.class);
             intent.putExtra("url", (String) msg.obj);
-            PendingIntent pendingIntent = PendingIntent.getService(getApplicationContext(), 0, intent, 0);
+            PendingIntent pendingIntent = PendingIntent.getService(getApplicationContext(), 0, intent,0);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_background)
                     .setContentTitle("title")
                     .setContentText("content")
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
                     .setContentIntent(pendingIntent);
 
             NotificationManagerCompat notificationManager = NotificationManagerCompat.from(getApplicationContext());

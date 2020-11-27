@@ -25,11 +25,17 @@ public class DownloadService extends Service {
     private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        System.out.println("created");
+    }
+
+    @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         Thread initBDD =  new Thread(new Runnable(){
             public void run() {
                 try {
-                    System.out.println("LANCEMENT");
+                    System.out.println("Notification clicked");
                     downloadZipFile(intent.getStringExtra("url"));
 
                 } catch (IOException | InterruptedException e) {
@@ -38,12 +44,6 @@ public class DownloadService extends Service {
             }
         });
         initBDD.start();
-        try {
-         initBDD.join();
-         } catch (InterruptedException e) {
-         e.printStackTrace();
-         }
-
         return START_NOT_STICKY;
     }
 
@@ -67,7 +67,6 @@ public class DownloadService extends Service {
         sendBroadcast(broadcastIntent);
 
         while(entry != null) {
-            //Thread.sleep(500);
             if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
                 File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
                 FileOutputStream os = new FileOutputStream(file);

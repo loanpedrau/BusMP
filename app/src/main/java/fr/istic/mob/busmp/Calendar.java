@@ -1,10 +1,13 @@
 package fr.istic.mob.busmp;
 
 import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
 @Entity
 public class Calendar {
 
+    @PrimaryKey
+    private int id;
     private int service_id ;
     private int monday;
     private int tuesday;
@@ -29,6 +32,14 @@ public class Calendar {
     private int sunday;
     private String start_date;
     private String end_date;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public int getService_id() {
         return service_id;

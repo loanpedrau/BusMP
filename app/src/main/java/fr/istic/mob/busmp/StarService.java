@@ -1,12 +1,13 @@
 package fr.istic.mob.busmp;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -14,15 +15,12 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import android.view.View;
-import android.widget.ProgressBar;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,13 +29,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.channels.Channels;
-import java.nio.file.Files;
-import java.text.Collator;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -52,6 +44,24 @@ public class StarService extends Service {
     private String actualUrl = "";
     private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
     private int nbFileUpload = 0;
+
+    private final BroadcastReceiver myReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, final Intent intent) {
+            Thread initBDD =  new Thread(new Runnable(){
+                public void run() {
+                    try {
+                        System.out.println("Notification clicked");
+                        downloadZipFile(intent.getStringExtra("url"));
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            initBDD.start();
+        }
+    };
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -69,6 +79,7 @@ public class StarService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        registerReceiver(myReceiver, new IntentFilter("Download"));
         Thread initAppWithFile =  new Thread(new Runnable(){
             public void run() {
                 try {
@@ -79,7 +90,7 @@ public class StarService extends Service {
                     System.out.println("FIRST FILE : "+getActualUrl());
                     downloadZipFile(getActualUrl());
 
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -103,7 +114,6 @@ public class StarService extends Service {
                             Message msg = mServiceHandler.obtainMessage();
                             msg.obj = url;
                             mServiceHandler.sendMessage(msg);
-                            setActualUrl(url);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -150,11 +160,8 @@ public class StarService extends Service {
         StringBuilder stringBuilder = new StringBuilder();
         try {
             url = new URL(urlSite);
-
             urlConnection = (HttpURLConnection) url.openConnection();
-
             InputStream in = urlConnection.getInputStream();
-
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
             String line;
@@ -179,7 +186,7 @@ public class StarService extends Service {
         return stringBuilder;
     }
 
-    private synchronized void downloadZipFile(String url) throws IOException, InterruptedException {
+    private synchronized void downloadZipFile(String url) throws IOException {
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("update_progress_bar");
         broadcastIntent.putExtra("value",nbFileUpload);
@@ -207,6 +214,7 @@ public class StarService extends Service {
         }
         System.out.println("FIN UNZIP");
         nbFileUpload =0;
+        setActualUrl(url);
     }
 
     public static void streamCopy(InputStream in, OutputStream out) throws IOException {
@@ -246,9 +254,9 @@ public class StarService extends Service {
         @Override
         public void handleMessage(Message msg){
             // Create an explicit intent for a Service in your app
-            Intent intent = new Intent(getApplicationContext(), DownloadService.class);
+            Intent intent = new Intent("Download");
             intent.putExtra("url", (String) msg.obj);
-            PendingIntent pendingIntent = PendingIntent.getService(getApplicationContext(), 0, intent,0);
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent,0);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_background)

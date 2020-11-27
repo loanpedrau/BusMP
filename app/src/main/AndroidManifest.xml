@@ -22,8 +22,6 @@
         </activity>
         <service android:name=".StarService"
             android:enabled="true"/>
-        <service android:name=".DownloadService"
-            android:enabled="true"/>
     </application>
 
 </manifest>

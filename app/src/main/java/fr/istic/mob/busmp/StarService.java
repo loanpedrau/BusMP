@@ -18,6 +18,7 @@ import android.os.Process;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.room.Room;
 
 import org.json.JSONObject;
 
@@ -30,6 +31,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -44,6 +49,8 @@ public class StarService extends Service {
     private String actualUrl = "";
     private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt");
     private int nbFileUpload = 0;
+    private SaveBusDatabase database;
+    //public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
     private final BroadcastReceiver myReceiver = new BroadcastReceiver() {
         @Override
@@ -71,10 +78,26 @@ public class StarService extends Service {
     @Override
     public void onCreate() {
         createNotificationChannel();
+        try {
+            initDb();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         HandlerThread thread = new HandlerThread("ServiceStartArguments",Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
         mServiceLooper = thread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper,this);
+    }
+
+    public void initDb() throws Exception {
+        this.database = Room.inMemoryDatabaseBuilder(this,
+                SaveBusDatabase.class)
+                .allowMainThreadQueries()
+                .build();
+    }
+
+    public void closeDb() throws Exception {
+        database.close();
     }
 
     @Override
@@ -139,6 +162,11 @@ public class StarService extends Service {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        try {
+            closeDb();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         super.onDestroy();
     }
 
@@ -197,7 +225,7 @@ public class StarService extends Service {
         ZipEntry entry = zipIn.getNextEntry();
         broadcastIntent.putExtra("size",entry.getSize());
         sendBroadcast(broadcastIntent);
-
+        this.database.clearAllTables();
         while(entry != null) {
             if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
                 File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
@@ -205,6 +233,7 @@ public class StarService extends Service {
                 streamCopy(zipIn, os);
                 os.close();
                 System.out.println("UNZIP : "+entry.getName());
+                insertDataInDatabase(file);
                 nbFileUpload++;
                 broadcastIntent.putExtra("value",nbFileUpload);
                 sendBroadcast(broadcastIntent);
@@ -213,8 +242,52 @@ public class StarService extends Service {
             entry = zipIn.getNextEntry();
         }
         System.out.println("FIN UNZIP");
+        for(Route route : this.database.routeDao().getAllRoutes()){
+            System.out.println(route.getRoute_id()+route.getRoute_color());
+        }
         nbFileUpload =0;
         setActualUrl(url);
+    }
+
+    private void insertDataInDatabase(File file) {
+        List<Stop_time> stops_time = new ArrayList<>();
+        try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+            // read the first line from the text file
+            String line = br.readLine();
+            line = br.readLine();
+            // loop until all lines are read
+            while (line != null) {
+                // use string.split to load a string array with the values from // each line of // the file, using a comma as the delimiter
+                String[] attributes = line.split(",");
+                //"routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt"
+                switch(file.getName()){
+                    case "routes.txt":
+                        Route route = new Route(attributes);
+                        this.database.routeDao().insertRoute(route);
+                        break;
+                    case "trips.txt":
+                        Trip trip = new Trip(attributes);
+                        this.database.tripDao().insertTrip(trip);
+                        break;
+                    case "stops.txt" :
+                        Stop stop = new Stop(attributes);
+                        this.database.stopDao().insertStop(stop);
+                        break;
+                    case "stop_times.txt" :
+                        Stop_time stop_time = new Stop_time(attributes);
+                        stops_time.add(stop_time);
+                        break;
+                    case "calendar.txt" :
+                        Calendar calender = new Calendar(attributes);
+                        this.database.calendarDao().insertCalendar(calender);
+                        break;
+                }
+                line = br.readLine();
+            }
+        } catch (IOException ioe) { ioe.printStackTrace(); }
+        if(file.getName().equals("stop_times.txt")) {
+            this.database.stopTimeDao().insertStopTime(stops_time);
+        }
     }
 
     public static void streamCopy(InputStream in, OutputStream out) throws IOException {

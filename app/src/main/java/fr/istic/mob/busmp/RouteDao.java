@@ -12,10 +12,10 @@ import java.util.List;
 public interface RouteDao {
 
     @Query("SELECT * FROM Route")
-    LiveData<List<Route>> getAllRoutes();
+    List<Route> getAllRoutes();
 
     @Query("SELECT * FROM Route WHERE route_id = :routeId")
-    LiveData<List<Route>> getRoutes(int routeId);
+    List<Route> getRoutes(int routeId);
 
     @Insert
     void insertRoute(Route route);

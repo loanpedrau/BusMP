@@ -12,10 +12,10 @@ import java.util.List;
 public interface StopDao {
 
     @Query("SELECT * FROM Stop")
-    LiveData<List<Stop>> getStop();
+    List<Stop> getStop();
 
     @Query("SELECT * FROM Stop WHERE stop_id = :stopId")
-    LiveData<List<Stop>> getStop(int stopId);
+    List<Stop> getStop(int stopId);
 
     @Insert
     void insertStop(Stop stop);

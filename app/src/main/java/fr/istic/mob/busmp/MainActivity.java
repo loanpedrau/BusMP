@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -20,12 +21,14 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar bar;
     private Spinner spinnerLigne;
     private Spinner spinnerDirection;
+    private ArrayList<String> dataLines;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
+            dataLines = new ArrayList<String>();
             bar = (ProgressBar) findViewById(R.id.progressBar);
             spinnerLigne = (Spinner) findViewById(R.id.spinner1);
             spinnerDirection = (Spinner) findViewById(R.id.spinner);
@@ -38,6 +41,22 @@ public class MainActivity extends AppCompatActivity {
             registerReceiver(spinnerReceiver, filterSpinner);
             Intent intent = new Intent(this, StarService.class);
             startService(intent);
+            spinnerLigne.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    ArrayList<String> directions = new ArrayList<String>();
+                    String line = dataLines.get(position);
+                    String[] data = line.split(",");
+                    directions.add(data[2]);
+                    directions.add(data[3]);
+                    ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(getApplicationContext(),
+                            android.R.layout.simple_spinner_item,directions);
+                    spinnerDirection.setAdapter(dataAdapter);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) { }
+            });
         }
     }
 
@@ -66,44 +85,14 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            ArrayList<String> lines = intent.getStringArrayListExtra("lines");
-            System.out.println(lines);
-            ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(getApplicationContext(),
-                    android.R.layout.simple_spinner_item,lines);
+            dataLines = intent.getStringArrayListExtra("lines");
+            ArrayList<String> titleLines = new ArrayList<String>();
+            for(String line : dataLines){
+                String[] data = line.split(",");
+                titleLines.add(data[0]+","+data[1]);
+            }
+            CustomAdapter dataAdapter = new CustomAdapter(getApplicationContext(),titleLines);
             spinnerLigne.setAdapter(dataAdapter);
-            System.out.println("passage ici");
         }
     }
-
-    /*
-private void loadBusLineSpinner()
-{
-    // database
-
-    // Spinner Drop down elements
-    List<String> busLines = getAllBusLines();
-
-    // Creating adapter for spinner
-    ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-            android.R.layout.simple_spinner_item, busLines);
-
-    // Drop down layout style - list view with radio button
-    dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-    // attaching data adapter to spinner
-    spinner1.setAdapter(dataAdapter);
-}
-
-public List<String> getAllBusLines(){
-    List<String> busLines = new ArrayList<String>();
-
-    // Select All Query
-
-    // looping through all rows and adding to list
-
-    // closing connection
-
-    // returning contatcs
-    return busLines;
-}*/
 }

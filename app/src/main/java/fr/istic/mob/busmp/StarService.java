@@ -49,10 +49,10 @@ public class StarService extends Service {
     private Thread checkFileThread;
     private boolean checkFile = true;
     private String actualUrl = "";
-    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt","stops.txt","calendar.txt"); //, "stop_times.txt"
+    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt","stop_times.txt", "stops.txt","calendar.txt");
     private int nbFileUpload = 0;
     private SaveBusDatabase database;
-    //public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
+    private boolean downloadInProgress = true;
 
     private final BroadcastReceiver myReceiver = new BroadcastReceiver() {
         @Override
@@ -121,11 +121,6 @@ public class StarService extends Service {
             }
         });
         initAppWithFile.start();
-        /**try {
-            initAppWithFile.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }**/
         checkFileThread = new Thread(new Runnable(){
             public void run() {
                 while(checkFile)
@@ -134,7 +129,7 @@ public class StarService extends Service {
                         String url = requestFile("https://data.explore.star.fr/api/records/1.0/search" +
                                 "/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=publication").toString();
                         //recupere dernier fichier publié (sort = publication)
-                        if(!url.equals(getActualUrl())) {
+                        if(!url.equals(getActualUrl()) && !downloadInProgress) {
                             System.out.println("NEW FILE : "+url);
                             Message msg = mServiceHandler.obtainMessage();
                             msg.obj = url;
@@ -217,6 +212,7 @@ public class StarService extends Service {
     }
 
     private synchronized void downloadZipFile(String url) throws IOException {
+        downloadInProgress = true;
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("update_progress_bar");
         broadcastIntent.putExtra("value",nbFileUpload);
@@ -243,10 +239,6 @@ public class StarService extends Service {
             zipIn.closeEntry();
             entry = zipIn.getNextEntry();
         }
-        System.out.println("FIN UNZIP");
-        for(Route route : this.database.routeDao().getAllRoutes()){
-            System.out.println(route.getRoute_id()+route.getRoute_color());
-        }
         nbFileUpload =0;
         setActualUrl(url);
         Intent broadcastIntentSpinner = new Intent();
@@ -266,6 +258,8 @@ public class StarService extends Service {
         }
         broadcastIntentSpinner.putExtra("lines", listRoutes);
         sendBroadcast(broadcastIntentSpinner);
+        System.out.println("FIN INIT DATABASE");
+        downloadInProgress = false;
     }
 
     private void insertDataInDatabase(File file) {

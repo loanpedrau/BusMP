@@ -7,13 +7,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private MyBroadRequestReceiver receiver;
     private SpinnerReceiver spinnerReceiver;
     private ProgressBar bar;
+    private Spinner spinnerLigne;
+    private Spinner spinnerDirection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             bar = (ProgressBar) findViewById(R.id.progressBar);
+            spinnerLigne = (Spinner) findViewById(R.id.spinner1);
+            spinnerDirection = (Spinner) findViewById(R.id.spinner);
             bar.setVisibility(View.VISIBLE);
             IntentFilter filter = new IntentFilter("update_progress_bar");
             receiver = new MyBroadRequestReceiver();
@@ -58,7 +66,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Object[] lines = intent.getStringArrayExtra("lines");
+            ArrayList<String> lines = intent.getStringArrayListExtra("lines");
+            System.out.println(lines);
+            ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(getApplicationContext(),
+                    android.R.layout.simple_spinner_item,lines);
+            spinnerLigne.setAdapter(dataAdapter);
             System.out.println("passage ici");
         }
     }

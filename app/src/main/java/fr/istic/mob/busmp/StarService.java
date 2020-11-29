@@ -49,7 +49,7 @@ public class StarService extends Service {
     private Thread checkFileThread;
     private boolean checkFile = true;
     private String actualUrl = "";
-    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt", "stop_times.txt","stops.txt","calendar.txt");
+    private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt","stops.txt","calendar.txt"); //, "stop_times.txt"
     private int nbFileUpload = 0;
     private SaveBusDatabase database;
     //public InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
@@ -252,25 +252,32 @@ public class StarService extends Service {
         Intent broadcastIntentSpinner = new Intent();
         broadcastIntentSpinner.setAction("update_spinners");
         List<Route> routes = this.database.routeDao().getAllRoutes();
-        Set hashset = new HashSet<>();
-        for(Route route : routes){
-            hashset.add(route.getRoute_short_name());
+        ArrayList<String> listRoutes = new ArrayList<String>();
+        for(Route route : routes) {
+            String lineName = route.getRoute_short_name();
+            String color = route.getRoute_color();
+            String[] destinations = route.getRoute_long_name().split("<>");
+            String destination1 = destinations[0];
+            String destination2 = destinations[destinations.length-1];
+            String lineWithData = lineName + "," + color + "," + destination1 + "," + destination2;
+            if (!listRoutes.contains(lineWithData)){
+                listRoutes.add(lineWithData);
+            }
         }
-        broadcastIntentSpinner.putExtra("line", hashset.toArray());
+        broadcastIntentSpinner.putExtra("lines", listRoutes);
         sendBroadcast(broadcastIntentSpinner);
     }
 
     private void insertDataInDatabase(File file) {
         List<Stop_time> stops_time = new ArrayList<>();
+        List<Trip> trips = new ArrayList<>();
         try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             // read the first line from the text file
             String line = br.readLine();
             line = br.readLine();
             // loop until all lines are read
             while (line != null) {
-                // use string.split to load a string array with the values from // each line of // the file, using a comma as the delimiter
                 String[] attributes = line.split(",");
-                //"routes.txt", "trips.txt", "stops.txt","stop_times.txt","calendar.txt"
                 switch(file.getName()){
                     case "routes.txt":
                         Route route = new Route(attributes);
@@ -278,7 +285,7 @@ public class StarService extends Service {
                         break;
                     case "trips.txt":
                         Trip trip = new Trip(attributes);
-                        this.database.tripDao().insertTrip(trip);
+                        trips.add(trip);
                         break;
                     case "stops.txt" :
                         Stop stop = new Stop(attributes);
@@ -297,7 +304,9 @@ public class StarService extends Service {
             }
         } catch (IOException ioe) { ioe.printStackTrace(); }
         if(file.getName().equals("stop_times.txt")) {
-            this.database.stopTimeDao().insertStopTime(stops_time);
+            this.database.stopTimeDao().insertAll(stops_time);
+        }else if(file.getName().equals("trips.txt")){
+            this.database.tripDao().insertAll(trips);
         }
     }
 

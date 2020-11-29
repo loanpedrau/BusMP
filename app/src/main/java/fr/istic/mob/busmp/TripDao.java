@@ -3,6 +3,7 @@ package fr.istic.mob.busmp;
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 import java.util.List;
@@ -12,8 +13,8 @@ public interface TripDao {
     @Query("SELECT * FROM Trip WHERE trip_id = :trip_id ")
     List<Trip> getTrip(int trip_id);
 
-    @Insert
-    void insertTrip(Trip trip);
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    void insertAll(List<Trip> trips);
 
     @Update
     void updateTrip(Trip trip);

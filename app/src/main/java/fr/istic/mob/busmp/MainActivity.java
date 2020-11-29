@@ -74,7 +74,9 @@ public class MainActivity extends AppCompatActivity {
             int max_progress = intent.getIntExtra("max_progress",5);
             int value = intent.getIntExtra("value",1);
             System.out.println("max :"+max_progress+" value :"+value);
-            bar.setMax(max_progress);
+            if(bar.getMax() ==0){
+                bar.setMax(max_progress);
+            }
             bar.setProgress(value);
             if(value == max_progress){
                 bar.setVisibility(View.GONE);

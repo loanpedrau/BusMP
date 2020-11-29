@@ -346,8 +346,8 @@ public class StarService extends Service {
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_background)
-                    .setContentTitle("title")
-                    .setContentText("content")
+                    .setContentTitle("BusMP")
+                    .setContentText("Une nouvelle mise à jour est disponible.")
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
                     .setContentIntent(pendingIntent);

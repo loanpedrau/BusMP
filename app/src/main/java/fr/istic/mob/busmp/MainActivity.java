@@ -36,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
             spinnerLigne = (Spinner) findViewById(R.id.spinner1);
             spinnerDirection = (Spinner) findViewById(R.id.spinner);
             bar.setVisibility(View.VISIBLE);
+            progressText.setVisibility(View.VISIBLE);
             IntentFilter filter = new IntentFilter("update_progress_bar");
             receiver = new MyBroadRequestReceiver();
             registerReceiver( receiver, filter);

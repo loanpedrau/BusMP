@@ -23,6 +23,9 @@
         </activity>
         <service android:name=".StarService"
             android:enabled="true"/>
+        <provider
+            android:authorities="fr.istic.mob.busmp"
+            android:name=".MyProvider"/>
     </application>
 
 </manifest>

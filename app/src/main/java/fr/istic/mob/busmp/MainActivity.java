@@ -84,6 +84,10 @@ public class MainActivity extends AppCompatActivity {
             if(value == max_progress){
                 bar.setVisibility(View.GONE);
                 progressText.setVisibility(View.GONE);
+                Intent intentQuit = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intentQuit);
             }
         }
     }

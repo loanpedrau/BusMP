@@ -11,6 +11,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
@@ -22,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private Spinner spinnerLigne;
     private Spinner spinnerDirection;
     private ArrayList<String> dataLines;
+    private TextView progressText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             dataLines = new ArrayList<String>();
             bar = (ProgressBar) findViewById(R.id.progressBar);
+            progressText = findViewById(R.id.myTextProgress);
             spinnerLigne = (Spinner) findViewById(R.id.spinner1);
             spinnerDirection = (Spinner) findViewById(R.id.spinner);
             bar.setVisibility(View.VISIBLE);
@@ -80,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
             bar.setProgress(value);
             if(value == max_progress){
                 bar.setVisibility(View.GONE);
+                progressText.setVisibility(View.GONE);
             }
         }
     }

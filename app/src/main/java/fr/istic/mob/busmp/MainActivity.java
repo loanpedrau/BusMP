@@ -68,6 +68,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        registerReceiver(receiver, new IntentFilter("update_progress_bar"));
+        registerReceiver(spinnerReceiver, new IntentFilter("update_spinners"));
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        try {
+            unregisterReceiver(receiver);
+            unregisterReceiver(spinnerReceiver);
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        }
+        super.onPause();
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
     }
@@ -88,10 +106,11 @@ public class MainActivity extends AppCompatActivity {
             if(value == max_progress){
                 bar.setVisibility(View.GONE);
                 progressText.setVisibility(View.GONE);
-                Intent intentQuit = new Intent(Intent.ACTION_MAIN);
+                /**Intent intentQuit = new Intent(Intent.ACTION_MAIN);
                 intent.addCategory(Intent.CATEGORY_HOME);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(intentQuit);
+                startActivity(intentQuit);**/
+                finish();
             }
         }
     }

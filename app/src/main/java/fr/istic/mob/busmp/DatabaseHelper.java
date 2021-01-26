@@ -3,6 +3,7 @@ package fr.istic.mob.busmp;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.strictmode.SqliteObjectLeakedViolation;
 import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
@@ -43,11 +44,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
         context.openOrCreateDatabase(DATABASE_NAME,Context.MODE_PRIVATE, null);
     }
-
-    public DatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
-        super(context, name, factory, version);
-    }
-
 
     @Override
     public void onCreate(SQLiteDatabase db) {

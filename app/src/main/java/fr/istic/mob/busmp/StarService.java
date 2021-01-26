@@ -5,9 +5,12 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentCallbacks;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -51,19 +54,23 @@ public class StarService extends Service {
     private String actualUrl = "";
     private List<String> fileNames = Arrays.asList("routes.txt", "trips.txt","stop_times.txt", "stops.txt","calendar.txt");
     private int nbFileUpload = 0;
-    private SaveBusDatabase database;
+    private DatabaseHelper dbHelper;
+    private SQLiteDatabase db;
     private boolean downloadInProgress = true;
 
     private final BroadcastReceiver myReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, final Intent intent) {
-            Thread initBDD =  new Thread(new Runnable(){
+            final Thread initBDD =  new Thread(new Runnable(){
                 public void run() {
                     try {
                         System.out.println("Notification clicked");
+                        initDb();
                         downloadZipFile(intent.getStringExtra("url"));
 
                     } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -71,6 +78,8 @@ public class StarService extends Service {
             initBDD.start();
         }
     };
+
+
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -92,14 +101,17 @@ public class StarService extends Service {
     }
 
     public void initDb() throws Exception {
-        this.database = Room.inMemoryDatabaseBuilder(this,
-                SaveBusDatabase.class)
-                .allowMainThreadQueries()
-                .build();
+        dbHelper = new DatabaseHelper(this.getApplicationContext());
+        db = dbHelper.getWritableDatabase();
     }
 
     public void closeDb() throws Exception {
-        database.close();
+        db.close();
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        return super.onUnbind(intent);
     }
 
     @Override
@@ -115,7 +127,9 @@ public class StarService extends Service {
                     System.out.println("FIRST FILE : "+getActualUrl());
                     downloadZipFile(getActualUrl());
 
-                } catch (IOException e) {
+                } catch (IOException e ) {
+                    e.printStackTrace();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -153,6 +167,7 @@ public class StarService extends Service {
 
     @Override
     public void onDestroy(){
+        unregisterReceiver(myReceiver);
         stopCheckFile();
         try {
             checkFileThread.join();
@@ -211,7 +226,15 @@ public class StarService extends Service {
         return stringBuilder;
     }
 
-    private synchronized void downloadZipFile(String url) throws IOException {
+    private void clearDatabase(){
+        this.db.delete("bus_route",null,null);
+        this.db.delete("trip",null,null);
+        this.db.delete("stop",null,null);
+        this.db.delete("calendar",null,null);
+        this.db.delete("trip",null,null);
+    }
+
+    private synchronized void downloadZipFile(String url) throws Exception {
         downloadInProgress = true;
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("update_progress_bar");
@@ -223,7 +246,7 @@ public class StarService extends Service {
         ZipEntry entry = zipIn.getNextEntry();
         broadcastIntent.putExtra("size",entry.getSize());
         sendBroadcast(broadcastIntent);
-        this.database.clearAllTables();
+        clearDatabase();
         while(entry != null) {
             if (!entry.isDirectory() && fileNames.contains(entry.getName())) {
                 File file = new File(getExternalFilesDir(null),entry.getName()); //external storage
@@ -243,28 +266,15 @@ public class StarService extends Service {
         setActualUrl(url);
         Intent broadcastIntentSpinner = new Intent();
         broadcastIntentSpinner.setAction("update_spinners");
-        //List<Route> routes = this.database.routeDao().getAllRoutes();
-        ArrayList<String> listRoutes = new ArrayList<String>();
-        /**for(Route route : routes) {
-            String lineName = route.getRoute_short_name();
-            String color = route.getRoute_color();
-            String[] destinations = route.getRoute_long_name().split("<>");
-            String destination1 = destinations[0];
-            String destination2 = destinations[destinations.length-1];
-            String lineWithData = lineName + "," + color + "," + destination1 + "," + destination2;
-            if (!listRoutes.contains(lineWithData)){
-                listRoutes.add(lineWithData);
-            }
-        }**/
-        broadcastIntentSpinner.putExtra("lines", listRoutes);
         sendBroadcast(broadcastIntentSpinner);
         System.out.println("FIN INIT DATABASE");
         downloadInProgress = false;
+        closeDb();
     }
 
     private void insertDataInDatabase(File file) {
-        List<Stop_time> stops_time = new ArrayList<>();
-        List<Trip> trips = new ArrayList<>();
+        List<ContentValues> stops_time_values = new ArrayList<>();
+        List<ContentValues> trips_values = new ArrayList<>();
         try (BufferedReader br = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             // read the first line from the text file
             String line = br.readLine();
@@ -275,33 +285,132 @@ public class StarService extends Service {
                 switch(file.getName()){
                     case "routes.txt":
                         Route route = new Route(attributes);
-                        this.database.routeDao().insertRoute(route);
+                        ContentValues routeValues = getRouteContentValues(route);
+                        db.insert("bus_route", null, routeValues);
                         break;
                     case "trips.txt":
                         Trip trip = new Trip(attributes);
-                        trips.add(trip);
+                        ContentValues tripValues = getTripContentValues(trip);
+                        trips_values.add(tripValues);
                         break;
                     case "stops.txt" :
                         Stop stop = new Stop(attributes);
-                        this.database.stopDao().insertStop(stop);
+                        ContentValues stopValues = getStopContentValues(stop);
+                        db.insert("stop", null, stopValues);
                         break;
                     case "stop_times.txt" :
                         Stop_time stop_time = new Stop_time(attributes);
-                        stops_time.add(stop_time);
+                        ContentValues stopTimeValues = getStopTimeContentValues(stop_time);
+                        stops_time_values.add(stopTimeValues);
                         break;
                     case "calendar.txt" :
-                        Calendar calender = new Calendar(attributes);
-                        this.database.calendarDao().insertCalendar(calender);
+                        Calendar calendar = new Calendar(attributes);
+                        ContentValues calendarValues = getCalendarContentValues(calendar);
+                        db.insert("calendar", null, calendarValues);
                         break;
                 }
                 line = br.readLine();
             }
         } catch (IOException ioe) { ioe.printStackTrace(); }
         if(file.getName().equals("stop_times.txt")) {
-            this.database.stopTimeDao().insertAll(stops_time);
+            db.beginTransaction();
+            try {
+                ContentValues values = new ContentValues();
+                for (ContentValues val : stops_time_values) {
+                    db.insert("stop_time", null, val);
+                }
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
         }else if(file.getName().equals("trips.txt")){
-            this.database.tripDao().insertAll(trips);
+            db.beginTransaction();
+            try {
+                ContentValues values = new ContentValues();
+                for (ContentValues val : trips_values) {
+                    db.insert("trip", null, val);
+                }
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
         }
+    }
+
+    private ContentValues getRouteContentValues(Route route){
+        ContentValues values = new ContentValues();
+        values.put("route_id",route.getRoute_id());
+        values.put("agency_id", route.getAgency_id());
+        values.put("route_short_name", route.getRoute_short_name());
+        values.put("route_long_name",route.getRoute_long_name());
+        values.put("route_desc", route.getRoute_desc());
+        values.put("route_type", route.getRoute_type());
+        values.put("route_url", route.getRoute_url());
+        values.put("route_color",route.getRoute_color());
+        values.put("route_text_color", route.getRoute_text_color());
+        values.put("route_sort_order", route.getRoute_sort_order());
+        return values;
+    }
+
+    private ContentValues getTripContentValues(Trip trip){
+        ContentValues values = new ContentValues();
+        values.put("route_id",trip.getRoute_id());
+        values.put("service_id", trip.getService_id());
+        values.put("trip_id", trip.getTrip_id());
+        values.put("trip_headsign",trip.getTrip_headsign());
+        values.put("trip_short_name", trip.getTrip_short_name());
+        values.put("direction_id", trip.getDirection_id());
+        values.put("block_id", trip.getBlock_id());
+        values.put("shape_id",trip.getShape_id());
+        values.put("wheelchair_accessible", trip.getWheelchair_accessible());
+        values.put("bikes_allowed", trip.getBikes_allowed());
+        return values;
+    }
+
+    private ContentValues getStopContentValues(Stop stop){
+        ContentValues values = new ContentValues();
+        values.put("stop_id",stop.getStop_id());
+        values.put("stop_code", stop.getStop_code());
+        values.put("stop_name", stop.getStop_name());
+        values.put("stop_desc",stop.getStop_desc());
+        values.put("stop_lat", stop.getStop_lat());
+        values.put("stop_lon", stop.getStop_lon());
+        values.put("zone_id", stop.getZone_id());
+        values.put("stop_url",stop.getStop_url());
+        values.put("location_type", stop.getLocation_type());
+        values.put("parent_station", stop.getParent_station());
+        values.put("stop_timezone", stop.getStop_timezone());
+        values.put("wheelchair_boarding", stop.getWheelchair_boarding());
+        return values;
+    }
+
+    private ContentValues getCalendarContentValues(Calendar calendar){
+        ContentValues values = new ContentValues();
+        values.put("service_id",calendar.getService_id());
+        values.put("monday", calendar.getMonday());
+        values.put("tuesday", calendar.getTuesday());
+        values.put("wednesday",calendar.getWednesday());
+        values.put("thursday", calendar.getThursday());
+        values.put("friday", calendar.getFriday());
+        values.put("saturday", calendar.getSaturday());
+        values.put("sunday",calendar.getSunday());
+        values.put("start_date", calendar.getStart_date());
+        values.put("end_date", calendar.getEnd_date());
+        return values;
+    }
+
+    private ContentValues getStopTimeContentValues(Stop_time stopTime){
+        ContentValues values = new ContentValues();
+        values.put("trip_id",stopTime.getTrip_id());
+        values.put("arrival_time", stopTime.getArrival_time());
+        values.put("departure_time", stopTime.getDeparture_time());
+        values.put("stop_id",stopTime.getStop_id());
+        values.put("stop_sequence", stopTime.getStop_sequence());
+        values.put("stop_headsign", stopTime.getStop_headsign());
+        values.put("pickup_type", stopTime.getPickup_type());
+        values.put("drop_off_type",stopTime.getDrop_off_type());
+        values.put("shape_dist_traveled",stopTime.getShape_dist_traveled());
+        return values;
     }
 
     public static void streamCopy(InputStream in, OutputStream out) throws IOException {
@@ -340,9 +449,9 @@ public class StarService extends Service {
         @Override
         public void handleMessage(Message msg){
             // Create an explicit intent for a Service in your app
-            Intent intent = new Intent("Download");
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             intent.putExtra("url", (String) msg.obj);
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(getApplicationContext(), 0, intent,0);
+            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent,0);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_background)

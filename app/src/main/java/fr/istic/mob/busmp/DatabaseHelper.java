@@ -44,6 +44,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         context.openOrCreateDatabase(DATABASE_NAME,Context.MODE_PRIVATE, null);
     }
 
+    public DatabaseHelper(Context context, String name, SQLiteDatabase.CursorFactory factory, int version) {
+        super(context, name, factory, version);
+    }
+
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(DATABASE_CREATE_1);

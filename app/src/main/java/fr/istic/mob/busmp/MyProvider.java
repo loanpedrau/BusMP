@@ -19,7 +19,7 @@ public class MyProvider extends ContentProvider {
 
     public static final int DATA_TABLE = 100;
     public static final int DATA_TABLE_DATE = 101;
-    private static final String DATABASE_NAME = "myData.db";
+    private static final String DATABASE_NAME = "database.db";
     private static final int DATABASE_VERSION = 1;
     private static final UriMatcher uriMatcher;
 

@@ -22,6 +22,8 @@ public class MyProvider extends ContentProvider {
     private static final String DATABASE_NAME = "database.db";
     private static final int DATABASE_VERSION = 1;
     private static final UriMatcher uriMatcher;
+    private static final int ITEM = 1;
+    private static final int COLLECTION = 2;
 
     // Alloue l'objet UriMatcher.
     // Une URI terminée par myPathToData correspondra à une requête sur une collection.

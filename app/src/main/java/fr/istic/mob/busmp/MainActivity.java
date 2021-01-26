@@ -15,6 +15,8 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
+import fr.istic.mob.busmp.provider.StarProvider;
+
 public class MainActivity extends AppCompatActivity {
 
     private MyBroadRequestReceiver receiver;
@@ -44,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
             spinnerReceiver = new SpinnerReceiver();
             registerReceiver(spinnerReceiver, filterSpinner);
             Intent intent = new Intent(this, StarService.class);
+
             startService(intent);
             spinnerLigne.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override

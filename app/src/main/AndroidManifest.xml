@@ -12,6 +12,13 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:largeHeap="true"
         >
+        <provider
+            android:authorities="fr.istic.mob.busmp.provider.StarProvider"
+            android:enabled="true"
+            android:multiprocess="true"
+            android:name=".provider.StarProvider"
+            android:exported="true"/>
+
         <activity android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             >
@@ -23,9 +30,7 @@
         </activity>
         <service android:name=".StarService"
             android:enabled="true"/>
-        <provider
-            android:authorities="fr.istic.mob.busmp"
-            android:name=".MyProvider"/>
+
     </application>
 
 </manifest>

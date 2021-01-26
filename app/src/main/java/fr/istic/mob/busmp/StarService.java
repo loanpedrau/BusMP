@@ -243,9 +243,9 @@ public class StarService extends Service {
         setActualUrl(url);
         Intent broadcastIntentSpinner = new Intent();
         broadcastIntentSpinner.setAction("update_spinners");
-        List<Route> routes = this.database.routeDao().getAllRoutes();
+        //List<Route> routes = this.database.routeDao().getAllRoutes();
         ArrayList<String> listRoutes = new ArrayList<String>();
-        for(Route route : routes) {
+        /**for(Route route : routes) {
             String lineName = route.getRoute_short_name();
             String color = route.getRoute_color();
             String[] destinations = route.getRoute_long_name().split("<>");
@@ -255,7 +255,7 @@ public class StarService extends Service {
             if (!listRoutes.contains(lineWithData)){
                 listRoutes.add(lineWithData);
             }
-        }
+        }**/
         broadcastIntentSpinner.putExtra("lines", listRoutes);
         sendBroadcast(broadcastIntentSpinner);
         System.out.println("FIN INIT DATABASE");

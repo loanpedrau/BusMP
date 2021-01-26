@@ -1,5 +1,7 @@
 package fr.istic.mob.busmp;
 
+import android.database.Cursor;
+
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
@@ -12,7 +14,7 @@ import java.util.List;
 public interface RouteDao {
 
     @Query("SELECT * FROM Route")
-    List<Route> getAllRoutes();
+    Cursor getAllRoutes();
 
     @Query("SELECT * FROM Route WHERE route_id = :routeId")
     List<Route> getRoutes(int routeId);

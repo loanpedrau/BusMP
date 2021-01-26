@@ -1,4 +1,4 @@
-package fr.istic.mob.busmp;
+package fr.istic.mob.busmp.provider;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
@@ -6,17 +6,21 @@ import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.room.Room;
 
-public class MyProvider extends ContentProvider {
+import fr.istic.mob.busmp.DatabaseHelper;
+import fr.istic.mob.busmp.SaveBusDatabase;
+import fr.istic.mob.busmp.StartContract;
+
+public class StarProvider extends ContentProvider {
 
     private DatabaseHelper dbHelper;
     private SQLiteDatabase myDB;
-    private static final String PROVIDER_NAME = "fr.istic.mob.busmp.MyProvider";
+    private static final String PROVIDER_NAME = "fr.istic.mob.busmp.provider.StarProvider";
     private static final String DATABASE_NAME = "database.db";
     private static final int DATABASE_VERSION = 1;
     private static final UriMatcher uriMatcher;
@@ -42,11 +46,12 @@ public class MyProvider extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sort) {
-
-        Cursor retCursor = dbHelper.getReadableDatabase().query(
-                StartContract.BusRoutes.CONTENT_PATH, projection, selection, selectionArgs, null, null, sort);
-        retCursor.setNotificationUri(getContext().getContentResolver(), uri);
-        return retCursor;
+        Cursor cursor = SaveBusDatabase.getInstance(getContext()).routeDao().getAllRoutes();
+        System.out.println("NB ROW : "+cursor.getCount());
+        //Cursor retCursor = dbHelper.getReadableDatabase().query(
+                //StartContract.BusRoutes.CONTENT_PATH, projection, selection, selectionArgs, null, null, sort);
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return cursor;
     }
 
     @Override

@@ -14,11 +14,9 @@ import androidx.annotation.Nullable;
 
 public class MyProvider extends ContentProvider {
 
-    public DatabaseHelper dbHelper;
-    public SQLiteDatabase myDB;
-
-    public static final int DATA_TABLE = 100;
-    public static final int DATA_TABLE_DATE = 101;
+    private DatabaseHelper dbHelper;
+    private SQLiteDatabase myDB;
+    private static final String PROVIDER_NAME = "fr.istic.mob.busmp.MyProvider";
     private static final String DATABASE_NAME = "database.db";
     private static final int DATABASE_VERSION = 1;
     private static final UriMatcher uriMatcher;
@@ -30,8 +28,8 @@ public class MyProvider extends ContentProvider {
     // Une URI terminée par'/[rowID]' correspondra à un item.
     static {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-        uriMatcher.addURI("MyAuthority", "myPathToData", COLLECTION);
-        uriMatcher.addURI("MyAuthority ", " myPathToData /#", ITEM);
+        uriMatcher.addURI(PROVIDER_NAME, StartContract.BusRoutes.CONTENT_PATH, COLLECTION);
+        uriMatcher.addURI(PROVIDER_NAME, StartContract.BusRoutes.CONTENT_PATH+"/#", ITEM);
     }
 
     @Override
@@ -45,43 +43,19 @@ public class MyProvider extends ContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sort) {
 
-        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-        qb.setTables("....");
-        // S'il s'agit d'une requête sur une ligne, on limite le résultat.
-        switch (uriMatcher.match(uri)) {
-            case ITEM:
-                qb.appendWhere(Constants.KEY_COL_ID + "=" + uri.getPathSegments().get(1));
-                break;
-            default:
-                break;
-        }
-
-        // Si aucun ordre de tri n'est spécifié, tri par date/heure
-        String orderBy;
-        if (TextUtils.isEmpty(sort)) {
-            orderBy = Constants.KEY_COL_NAME;
-        } else {
-            orderBy = sort;
-        }
-
-        // Applique la requête à la base.
-        Cursor c = qb.query(myDB, projection, selection, selectionArgs, null, null, orderBy);
-
-        // Enregistre le ContextResolver pour qu'il soit averti
-        // si le résultat change.
-        c.setNotificationUri(getContext().getContentResolver(), uri);
-
-        // Renvoie un curseur.
-        return c;
+        Cursor retCursor = dbHelper.getReadableDatabase().query(
+                StartContract.BusRoutes.CONTENT_PATH, projection, selection, selectionArgs, null, null, sort);
+        retCursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return retCursor;
     }
 
     @Override
     public String getType(Uri uri) {
         switch (uriMatcher.match(uri)) {
             case COLLECTION:
-                return "vnd.android.cursor.dir/vnd.myCompany.contentType ";
+                return StartContract.BusRoutes.CONTENT_TYPE;
             case ITEM:
-                return "vnd.android.cursor.item/vnd.myCompany.contentType ";
+                return StartContract.BusRoutes.CONTENT_ITEM_TYPE;
             default:
                 throw new IllegalArgumentException("URI non supportée : " + uri);
         }

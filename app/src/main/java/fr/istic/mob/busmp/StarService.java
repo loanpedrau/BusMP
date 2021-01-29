@@ -117,15 +117,24 @@ public class StarService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         registerReceiver(myReceiver, new IntentFilter("Download"));
+        final String url = intent.getStringExtra("url");
         Thread initAppWithFile =  new Thread(new Runnable(){
             public void run() {
                 try {
-                    setActualUrl(requestFile("https://data.explore.star.fr/api/records/1.0/search" +
-                            "/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=-publication").toString());
-                    // l’appli télécharge automatiquement le premier fichier CSV/JSON à l’installation (le plus ancien donc : sort = -publication)
-                    //pour pouvoir tester le service
-                    System.out.println("FIRST FILE : "+getActualUrl());
-                    downloadZipFile(getActualUrl());
+                    initDb();
+                    if(url == null) {
+                        setActualUrl(requestFile("https://data.explore.star.fr/api/records/1.0/search" +
+                                "/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=-publication").toString());
+                        // l’appli télécharge automatiquement le premier fichier CSV/JSON à l’installation (le plus ancien donc : sort = -publication)
+                        //pour pouvoir tester le service
+                        downloadZipFile(getActualUrl());
+                    }else{
+                        setActualUrl(requestFile(url).toString());
+                        // l’appli télécharge automatiquement le premier fichier CSV/JSON à l’installation (le plus ancien donc : sort = -publication)
+                        //pour pouvoir tester le service
+                        System.out.println("UPDATE DATABASE WITH : "+getActualUrl());
+                        downloadZipFile(getActualUrl());
+                    }
 
                 } catch (IOException e ) {
                     e.printStackTrace();
@@ -146,7 +155,7 @@ public class StarService extends Service {
                         if(!url.equals(getActualUrl()) && !downloadInProgress) {
                             System.out.println("NEW FILE : "+url);
                             Message msg = mServiceHandler.obtainMessage();
-                            msg.obj = url;
+                            msg.obj = "https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=publication";
                             mServiceHandler.sendMessage(msg);
                         }
                     } catch (IOException e) {
@@ -235,6 +244,7 @@ public class StarService extends Service {
     }
 
     private synchronized void downloadZipFile(String url) throws Exception {
+        System.out.println("File downloaded :"+url);
         downloadInProgress = true;
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction("update_progress_bar");
@@ -269,7 +279,6 @@ public class StarService extends Service {
         sendBroadcast(broadcastIntentSpinner);
         System.out.println("FIN INIT DATABASE");
         downloadInProgress = false;
-        closeDb();
     }
 
     private void insertDataInDatabase(File file) {

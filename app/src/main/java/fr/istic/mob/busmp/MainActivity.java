@@ -35,7 +35,9 @@ public class MainActivity extends AppCompatActivity {
             IntentFilter filter = new IntentFilter("update_progress_bar");
             receiver = new MyBroadRequestReceiver();
             registerReceiver( receiver, filter);
+            String urlForUpdate = getIntent().getStringExtra("url");
             Intent intent = new Intent(this, StarService.class);
+            intent.putExtra("url", urlForUpdate);
             startService(intent);
         }
     }

@@ -3,7 +3,6 @@ package fr.istic.mob.busmp;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.os.strictmode.SqliteObjectLeakedViolation;
 import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {

@@ -5,7 +5,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentCallbacks;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -18,13 +17,9 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import androidx.room.Room;
-
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,12 +31,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -128,10 +120,8 @@ public class StarService extends Service {
                         // l’appli télécharge automatiquement le premier fichier CSV/JSON à l’installation (le plus ancien donc : sort = -publication)
                         //pour pouvoir tester le service
                         downloadZipFile(getActualUrl());
-                    }else{
+                    }else{ //il y a une url qui a été passé par l'intent donc clic sur notif pour update
                         setActualUrl(requestFile(url).toString());
-                        // l’appli télécharge automatiquement le premier fichier CSV/JSON à l’installation (le plus ancien donc : sort = -publication)
-                        //pour pouvoir tester le service
                         System.out.println("UPDATE DATABASE WITH : "+getActualUrl());
                         downloadZipFile(getActualUrl());
                     }
@@ -152,7 +142,7 @@ public class StarService extends Service {
                         String url = requestFile("https://data.explore.star.fr/api/records/1.0/search" +
                                 "/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=publication").toString();
                         //recupere dernier fichier publié (sort = publication)
-                        if(!url.equals(getActualUrl()) && !downloadInProgress) {
+                        if(!url.equals(getActualUrl()) && !downloadInProgress) { //lance une notification si nouveau fichier present et pas de telechargement en cours
                             System.out.println("NEW FILE : "+url);
                             Message msg = mServiceHandler.obtainMessage();
                             msg.obj = "https://data.explore.star.fr/api/records/1.0/search/?dataset=tco-busmetro-horaires-gtfs-versions-td&q=&sort=publication";
@@ -203,6 +193,12 @@ public class StarService extends Service {
         this.actualUrl = actualUrl;
     }
 
+    /**
+     * Return the url of the file to download
+     * @param urlSite
+     * @return
+     * @throws IOException
+     */
     private StringBuilder requestFile(String urlSite) throws IOException {
         URL url;
         HttpURLConnection urlConnection = null;
@@ -243,6 +239,11 @@ public class StarService extends Service {
         this.db.delete("trip",null,null);
     }
 
+    /**
+     * Download the file with the url and populate the database
+     * @param url
+     * @throws Exception
+     */
     private synchronized void downloadZipFile(String url) throws Exception {
         System.out.println("File downloaded :"+url);
         downloadInProgress = true;
@@ -281,6 +282,10 @@ public class StarService extends Service {
         downloadInProgress = false;
     }
 
+    /**
+     * Insert the data of the file in the database
+     * @param file
+     */
     private void insertDataInDatabase(File file) {
         List<ContentValues> stops_time_values = new ArrayList<>();
         List<ContentValues> trips_values = new ArrayList<>();
@@ -322,7 +327,7 @@ public class StarService extends Service {
             }
         } catch (IOException ioe) { ioe.printStackTrace(); }
         if(file.getName().equals("stop_times.txt")) {
-            db.beginTransaction();
+            db.beginTransaction(); //transaction pour etre plus rapide
             try {
                 ContentValues values = new ContentValues();
                 for (ContentValues val : stops_time_values) {
@@ -438,8 +443,7 @@ public class StarService extends Service {
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
             NotificationChannel channel = new NotificationChannel(ServiceHandler.CHANNEL_ID, name, importance);
             channel.setDescription(description);
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
+            // Register the channel with the system
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
         }

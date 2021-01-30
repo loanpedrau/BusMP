@@ -7,15 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.TextView;
-
-import java.util.ArrayList;
-
-import fr.istic.mob.busmp.provider.StarProvider;
 
 public class MainActivity extends AppCompatActivity {
 

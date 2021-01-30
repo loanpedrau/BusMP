@@ -26,8 +26,6 @@ public class StarProvider extends ContentProvider {
     private static final int STOPS_TIMES_ALL = 4;
 
     // Alloue l'objet UriMatcher.
-    // Une URI terminée par myPathToData correspondra à une requête sur une collection.
-    // Une URI terminée par'/[rowID]' correspondra à un item.
     static {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI(PROVIDER_NAME, StartContract.BusRoutes.CONTENT_PATH, BUS_ROUTES_ALL);
@@ -49,7 +47,6 @@ public class StarProvider extends ContentProvider {
 
         Cursor cursor = dbHelper.getReadableDatabase().query(
                 uri.getPath().replace("/",""), projection, selection, selectionArgs, null, null, sort);
-        System.out.println("NB ROW : "+cursor.getCount());
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
